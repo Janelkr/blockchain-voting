@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Блокчейн-голосование</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 5px 5px 5px 0;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .candidate {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .candidate input {
+            transform: scale(1.2);
+            margin-right: 8px;
+        }
+        .candidate label {
+            font-weight: 500;
+            flex: 1;
+        }
+        .vote-count {
+            color: #4b5563;
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        #status {
+            background: #e0f2fe;
+            padding: 12px;
+            border-radius: 12px;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        input, select {
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            width: 100%;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+        hr {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🗳️Децентрализованное голосование</h1>
+        <button id="connectBtn">🔌 Подключить MetaMask</button>
+        <p><strong>Ваш адрес:</strong> <span id="account">не подключён</span></p>
+        
+        <label> Адрес контракта:</label>
+        <input type="text" id="contractAddrInput" placeholder="0x..." value="" style="font-family: monospace;">
+        <button id="loadContractBtn">Загрузить контракт</button>
+        
+        <hr>
+        <div id="contractInfo" style="display: none;">
+            <h2> Список кандидатов</h2>
+            <div id="candidatesList"></div>
+            <button id="voteBtn" disabled> Проголосовать за выбранного</button>
+            <button id="winnerBtn"> Показать победителя</button>
+            <button id="refreshBtn"> Обновить</button>
+            <h3>Статус</h3>
+            <div id="status">Ожидание действий...</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script>
+        let provider, signer, contract, selectedCandidateId = null;
+        const contractABI = [
+            "function getAllCandidates() external view returns (tuple(uint256 id, string name, uint256 voteCount)[])",
+            "function vote(uint256 candidateId)",
+            "function getWinner() external view returns (string winnerName, uint256 winnerVotes)",
+            "function hasVoted(address) external view returns (bool)"
+        ];
+
+        // Элементы DOM
+        const connectBtn = document.getElementById('connectBtn');
+        const accountSpan = document.getElementById('account');
+        const contractAddrInput = document.getElementById('contractAddrInput');
+        const loadContractBtn = document.getElementById('loadContractBtn');
+        const contractInfoDiv = document.getElementById('contractInfo');
+        const candidatesDiv = document.getElementById('candidatesList');
+        const voteBtn = document.getElementById('voteBtn');
+        const winnerBtn = document.getElementById('winnerBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const statusDiv = document.getElementById('status');
+
+        function setStatus(msg, isError = false) {
+            statusDiv.innerHTML = msg;
+            statusDiv.style.background = isError ? '#fee2e2' : '#e0f2fe';
+        }
+
+        // Подключение MetaMask
+        connectBtn.onclick = async () => {
+            if (!window.ethereum) {
+                alert("Установите MetaMask!");
+                return;
+            }
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                const userAddr = await signer.getAddress();
+                accountSpan.innerText = userAddr;
+                connectBtn.disabled = true;
+                setStatus(" MetaMask подключён. Введите адрес контракта и нажмите 'Загрузить контракт'.");
+                
+                // Слушаем смену аккаунта/сети
+                window.ethereum.on('accountsChanged', () => window.location.reload());
+                window.ethereum.on('chainChanged', () => window.location.reload());
+            } catch (err) {
+                setStatus("Ошибка подключения: " + err.message, true);
+            }
+        };
+
+        // Загрузка контракта по адресу
+        async function loadContract() {
+            let addr = contractAddrInput.value.trim();
+            if (!addr.match(/^0x[a-fA-F0-9]{40}$/)) {
+                setStatus(" Введите корректный адрес контракта (0x...)", true);
+                return;
+            }
+            if (!provider || !signer) {
+                setStatus(" Сначала подключите MetaMask.", true);
+                return;
+            }
+            try {
+                contract = new ethers.Contract(addr, contractABI, signer);
+                // Проверка: вызываем getAllCandidates
+                await contract.getAllCandidates();
+                contractInfoDiv.style.display = 'block';
+                setStatus(` Контракт загружен: ${addr}`);
+                await loadCandidates();
+                voteBtn.disabled = false;
+            } catch (err) {
+                setStatus(` Не удалось загрузить контракт: ${err.message}`, true);
+                contractInfoDiv.style.display = 'none';
+                voteBtn.disabled = true;
+            }
+        }
+        loadContractBtn.onclick = loadContract;
+
+        // Загрузка кандидатов и обновление UI
+        async function loadCandidates() {
+            if (!contract) return;
+            try {
+                const candidates = await contract.getAllCandidates();
+                const userAddress = await signer.getAddress();
+                const hasVoted = await contract.hasVoted(userAddress);
+                
+                candidatesDiv.innerHTML = "";
+                if (candidates.length === 0) {
+                    candidatesDiv.innerHTML = "<p>Нет кандидатов</p>";
+                    return;
+                }
+                
+                candidates.forEach(cand => {
+                    const div = document.createElement('div');
+                    div.className = 'candidate';
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = 'candidate';
+                    radio.value = cand.id.toString();
+                    radio.disabled = hasVoted;
+                    radio.onclick = () => { selectedCandidateId = cand.id; };
+                    const label = document.createElement('label');
+                    label.innerText = `${cand.name}`;
+                    const votesSpan = document.createElement('span');
+                    votesSpan.className = 'vote-count';
+                    votesSpan.innerText = `${cand.voteCount} голосов`;
+                    div.appendChild(radio);
+                    div.appendChild(label);
+                    div.appendChild(votesSpan);
+                    candidatesDiv.appendChild(div);
+                });
+                
+                if (hasVoted) {
+                    setStatus(" Вы уже проголосовали. Голосование недоступно.");
+                    voteBtn.disabled = true;
+                } else {
+                    voteBtn.disabled = false;
+                }
+            } catch (err) {
+                setStatus("Ошибка загрузки кандидатов: " + err.message, true);
+            }
+        }
+
+        // Голосование
+        async function submitVote() {
+            if (!selectedCandidateId) {
+                setStatus("Пожалуйста, выберите кандидата.", true);
+                return;
+            }
+            if (!contract) return;
+            try {
+                setStatus(`Отправка транзакции голосования за кандидата #${selectedCandidateId}...`);
+                const tx = await contract.vote(selectedCandidateId);
+                setStatus(` Транзакция отправлена: ${tx.hash}. Ожидание подтверждения...`);
+                await tx.wait();
+                setStatus(` Голос учтён! Транзакция: <a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank">${tx.hash}</a>`);
+                await loadCandidates();  // обновить список
+                selectedCandidateId = null;
+                // сбросить радиокнопки
+                document.querySelectorAll('input[name="candidate"]').forEach(r => r.checked = false);
+            } catch (err) {
+                setStatus("Ошибка голосования: " + err.message, true);
+            }
+        }
+        voteBtn.onclick = submitVote;
+
+        // Победитель
+        async function showWinner() {
+            if (!contract) return;
+            try {
+                const [winnerName, winnerVotes] = await contract.getWinner();
+                setStatus(` Победитель: **${winnerName}** с ${winnerVotes} голосами.`);
+            } catch (err) {
+                setStatus("Ошибка: " + err.message, true);
+            }
+        }
+        winnerBtn.onclick = showWinner;
+        refreshBtn.onclick = loadCandidates;
+
+        // Если адрес контракта уже есть в localStorage, подставить
+        if (localStorage.getItem('lastContract')) {
+            contractAddrInput.value = localStorage.getItem('lastContract');
+        }
+        contractAddrInput.onchange = () => {
+            localStorage.setItem('lastContract', contractAddrInput.value);
+        };
+    </script>
+</body>
+</html>
