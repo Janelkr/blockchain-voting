@@ -316,7 +316,7 @@ MIT
 * Жаркинбеков Дастан
 
 ## Контакты 
-Email: karimzhanovazhanel4@gmail.com; zhuldyz.kabibolla05@gmail.com; kangereev.timur@gmail.com; zadralvottochnoucitsanado@gmail.com
-GitHub: janelkr
+* Email: karimzhanovazhanel4@gmail.com; zhuldyz.kabibolla05@gmail.com; kangereev.timur@gmail.com; zadralvottochnoucitsanado@gmail.com
+* GitHub: janelkr
 
 
