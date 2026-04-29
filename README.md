@@ -265,22 +265,22 @@ npx hardhat run scripts/deploy.js --network sepolia
 *Нажатие кнопки «Connect MetaMask» и выбор аккаунта.*
 
 ### 📋 Интерфейс приложения после загрузки контракта
-![Интерфейс](screenshots/interface.jpg)
+![Интерфейс](interface.jpg)
 *Отображение списка кандидатов (Alice, Bob, Charlie) с текущим количеством голосов.*
 
 ### 🗳️ Выбор кандидата и кнопка голосования и Подтверждение транзакции в MetaMask
-![Голосование](screenshots/transaction.jpg)
+![Голосование](transaction.jpg)
 *Выбран кандидат «Alice», кнопка «Vote» активна.*
 *Всплывающее окно MetaMask с запросом подписи транзакции.*
 
 ### 🔐 Попытка проголосовать повторно – ошибка
-![Already voted](screenshots/terminal.jpg)
+![Already voted](already_voted.jpg)
 *Сообщение об ошибке «Already voted» – защита от двойного голосования.*
 
 
 
 ### ⚙️ Вывод терминала после деплоя
-![Деплой](screenshots/transaction.jpg)
+![Деплой](transaction.jpg)
 *Терминал с выводом «Contract deployed to: 0x...» после успешного деплоя.*
 
 ## ✅ Возможности
