@@ -260,7 +260,7 @@ npx hardhat run scripts/deploy.js --network sepolia
 ## 📸 Скриншоты интерфейса
 
 ### 🔌 Подключение MetaMask
-![Подключение](screenshots/connect.jpg
+![Подключение](connect.jpg
 )
 *Нажатие кнопки «Connect MetaMask» и выбор аккаунта.*
 
