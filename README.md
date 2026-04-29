@@ -312,7 +312,11 @@ MIT
 
 * Қабиболла Жұлдыз
 * Каримжанова Жанель  
-* Кангерев Тимур Timur
+* Кангерев Тимур
 * Жаркинбеков Дастан
+
+## Контакты 
+Email: karimzhanovazhanel4@gmail.com; zhuldyz.kabibolla05@gmail.com; kangereev.timur@gmail.com; zadralvottochnoucitsanado@gmail.com
+GitHub: janelkr
 
 
