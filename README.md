@@ -260,7 +260,7 @@ npx hardhat run scripts/deploy.js --network sepolia
 ## 📸 Скриншоты интерфейса
 
 ### 🔌 Подключение MetaMask
-![Подключение](connect.jpg
+![Подключение](connect.jpg)
 )
 *Нажатие кнопки «Connect MetaMask» и выбор аккаунта.*
 
@@ -278,11 +278,12 @@ npx hardhat run scripts/deploy.js --network sepolia
 *Сообщение об ошибке «Already voted» – защита от двойного голосования.*
 
 
-
 ### ⚙️ Вывод терминала после деплоя
-![Деплой](transaction.jpg)
+![Деплой](terminal.jpg)
 *Терминал с выводом «Contract deployed to: 0x...» после успешного деплоя.*
 
+### ⚙️ Вывод терминала после деплоя
+*Могли бы мне кажется.*
 ## ✅ Возможности
 
 * Один пользователь — один голос
