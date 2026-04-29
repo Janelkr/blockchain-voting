@@ -268,6 +268,8 @@ npx hardhat run scripts/deploy.js --network sepolia
 Адрес смарт - контракта:
 0x5FbDB2315678afecb367f032d93F642f64180aa3
 
+---
+
 ## 📸 Скриншоты интерфейса
 
 ### 🔌 Подключение MetaMask
